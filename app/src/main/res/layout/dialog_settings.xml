@@ -65,6 +65,32 @@
         android:max="10"
         android:progress="7" />
 
+    <!-- Auto-Lure Option -->
+    <CheckBox
+        android:id="@+id/cbAutoLure"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Enable Auto-Lure (3: LURE)"
+        android:textColor="@color/text_primary"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/tvLureDurationLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Lure Duration: 10 min"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp" />
+
+    <SeekBar
+        android:id="@+id/sbLureDuration"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="29"
+        android:progress="9" />
+
     <!-- Close button -->
     <Button
         android:id="@+id/btnCloseSettings"

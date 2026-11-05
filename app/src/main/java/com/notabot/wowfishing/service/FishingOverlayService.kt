@@ -13,12 +13,14 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.SystemClock
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.ProgressBar
@@ -39,17 +41,19 @@ class FishingOverlayService : Service() {
     private var controlView: View? = null
     private var castMarkerView: View? = null
     private var reelMarkerView: View? = null
+    private var lureMarkerView: View? = null
     private var settingsDialogView: View? = null
 
     private lateinit var audioDetector: AudioSplashDetector
 
     private var isBotActive = false
     private var isReelingOrDelaying = false
+    private var lureExpirationTimestamp = 0L
 
     private val timeoutRunnable = Runnable {
         if (isBotActive && !isReelingOrDelaying) {
             updateStatusText("Timeout reached, recasting…")
-            castFishingLine()
+            startOrContinueFishingCycle()
         }
     }
 
@@ -176,6 +180,8 @@ class FishingOverlayService : Service() {
         if (config.castY <= 0f) config.castY = 300f + halfMarker
         if (config.reelX <= 0f) config.reelX = 400f + halfMarker
         if (config.reelY <= 0f) config.reelY = 300f + halfMarker
+        if (config.lureX <= 0f) config.lureX = 600f + halfMarker
+        if (config.lureY <= 0f) config.lureY = 300f + halfMarker
 
         // Marker 1: Cast Button Target
         val castView = inflater.inflate(R.layout.overlay_target_marker, null)
@@ -226,6 +232,32 @@ class FishingOverlayService : Service() {
             config.save(this)
         }
         windowManager.addView(reelView, reelParams)
+
+        // Marker 3: Lure Button Target
+        val lureView = inflater.inflate(R.layout.overlay_target_marker, null)
+        lureMarkerView = lureView
+        lureView.findViewById<TextView>(R.id.tvTargetName).text = getString(R.string.overlay_lure_label)
+        lureView.findViewById<View>(R.id.viewCenterDot).setBackgroundColor(getColor(R.color.overlay_lure))
+        lureView.visibility = if (config.autoLureEnabled) View.VISIBLE else View.GONE
+
+        val lureParams = WindowManager.LayoutParams(
+            markerSize,
+            markerSize,
+            getOverlayWindowType(),
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = (config.lureX - halfMarker).toInt()
+            y = (config.lureY - halfMarker).toInt()
+        }
+
+        setupMarkerDragListener(lureView, lureParams) { centerX, centerY ->
+            config.lureX = centerX
+            config.lureY = centerY
+            config.save(this)
+        }
+        windowManager.addView(lureView, lureParams)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -309,8 +341,8 @@ class FishingOverlayService : Service() {
             btnToggle?.setImageResource(R.drawable.ic_stop)
             btnToggle?.setColorFilter(getColor(R.color.accent_red))
             isReelingOrDelaying = false
-            updateStatusText("Starting fishing loop…")
-            castFishingLine()
+            updateStatusText("Starting automation…")
+            startOrContinueFishingCycle()
         } else {
             btnToggle?.setImageResource(R.drawable.ic_play)
             btnToggle?.setColorFilter(getColor(R.color.accent_green))
@@ -318,6 +350,49 @@ class FishingOverlayService : Service() {
             mainHandler.removeCallbacksAndMessages(null)
             isReelingOrDelaying = false
             updateStatusText(getString(R.string.overlay_status_idle))
+        }
+    }
+
+    private fun startOrContinueFishingCycle() {
+        if (!isBotActive) return
+
+        if (config.autoLureEnabled && isLureExpired()) {
+            applyLureThen {
+                castFishingLine()
+            }
+        } else {
+            castFishingLine()
+        }
+    }
+
+    private fun isLureExpired(): Boolean {
+        return SystemClock.uptimeMillis() >= lureExpirationTimestamp
+    }
+
+    private fun applyLureThen(onComplete: () -> Unit) {
+        if (!isBotActive) return
+
+        updateStatusText(getString(R.string.overlay_status_luring))
+        mainHandler.removeCallbacks(timeoutRunnable)
+
+        val accessibility = FishingAccessibilityService.instance
+        if (accessibility == null) {
+            stopBotOnError("Accessibility service disconnected")
+            return
+        }
+
+        accessibility.click(config.lureX, config.lureY) {
+            if (!isBotActive) return@click
+
+            lureExpirationTimestamp = SystemClock.uptimeMillis() + (config.lureDurationMinutes * 60 * 1000L)
+            val delayMs = (config.lureApplyDelaySec * 1000f).toLong().coerceAtLeast(2500L)
+            updateStatusText(String.format("Lure applied! Cast in %.1fs", config.lureApplyDelaySec))
+
+            mainHandler.postDelayed({
+                if (isBotActive) {
+                    onComplete()
+                }
+            }, delayMs)
         }
     }
 
@@ -365,13 +440,13 @@ class FishingOverlayService : Service() {
 
             val delayMillis = config.getRandomRecastDelayMillis()
             val delaySeconds = delayMillis / 1000.0f
-            updateStatusText(String.format("Reeled! Recast in %.1fs", delaySeconds))
+            updateStatusText(String.format("Reeled! Next action in %.1fs", delaySeconds))
 
-            // Wait randomized delay before next cast
+            // Wait randomized delay before next cycle
             mainHandler.postDelayed({
                 if (isBotActive) {
                     isReelingOrDelaying = false
-                    castFishingLine()
+                    startOrContinueFishingCycle()
                 }
             }, delayMillis)
         }
@@ -419,6 +494,9 @@ class FishingOverlayService : Service() {
         val sbMinDelay = dialogView.findViewById<SeekBar>(R.id.sbMinDelay)
         val tvMaxDelay = dialogView.findViewById<TextView>(R.id.tvMaxDelayLabel)
         val sbMaxDelay = dialogView.findViewById<SeekBar>(R.id.sbMaxDelay)
+        val cbAutoLure = dialogView.findViewById<CheckBox>(R.id.cbAutoLure)
+        val tvLureDuration = dialogView.findViewById<TextView>(R.id.tvLureDurationLabel)
+        val sbLureDuration = dialogView.findViewById<SeekBar>(R.id.sbLureDuration)
         val btnClose = dialogView.findViewById<Button>(R.id.btnCloseSettings)
 
         // Threshold setup
@@ -468,6 +546,29 @@ class FishingOverlayService : Service() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
+        // Auto-Lure setup
+        cbAutoLure.isChecked = config.autoLureEnabled
+        tvLureDuration.text = "Lure Duration: ${config.lureDurationMinutes} min"
+        sbLureDuration.progress = (config.lureDurationMinutes - 1).coerceIn(0, 29)
+
+        cbAutoLure.setOnCheckedChangeListener { _, isChecked ->
+            config.autoLureEnabled = isChecked
+            lureMarkerView?.visibility = if (isChecked) View.VISIBLE else View.GONE
+            if (isChecked) {
+                lureExpirationTimestamp = 0L
+            }
+        }
+
+        sbLureDuration.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val minutes = progress + 1
+                config.lureDurationMinutes = minutes
+                tvLureDuration.text = "Lure Duration: $minutes min"
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
         btnClose.setOnClickListener {
             config.save(this)
             windowManager.removeView(dialogView)
@@ -490,6 +591,7 @@ class FishingOverlayService : Service() {
         controlView?.let { windowManager.removeView(it) }
         castMarkerView?.let { windowManager.removeView(it) }
         reelMarkerView?.let { windowManager.removeView(it) }
+        lureMarkerView?.let { windowManager.removeView(it) }
         settingsDialogView?.let { windowManager.removeView(it) }
 
         config.save(this)

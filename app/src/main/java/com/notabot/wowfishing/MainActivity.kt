@@ -34,6 +34,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvDelayLabel: TextView
     private lateinit var sbDelayMin: SeekBar
     private lateinit var sbDelayMax: SeekBar
+    private lateinit var cbAutoLure: android.widget.CheckBox
+    private lateinit var tvLureDurationLabel: TextView
+    private lateinit var sbLureDuration: SeekBar
 
     private val micPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -78,6 +81,9 @@ class MainActivity : AppCompatActivity() {
         tvDelayLabel = findViewById(R.id.tvMainDelayLabel)
         sbDelayMin = findViewById(R.id.sbMainDelayMin)
         sbDelayMax = findViewById(R.id.sbMainDelayMax)
+        cbAutoLure = findViewById(R.id.cbMainAutoLure)
+        tvLureDurationLabel = findViewById(R.id.tvMainLureDurationLabel)
+        sbLureDuration = findViewById(R.id.sbMainLureDuration)
 
         // Initialize sliders from saved config
         sbThreshold.progress = config.soundThreshold
@@ -88,6 +94,10 @@ class MainActivity : AppCompatActivity() {
         sbDelayMin.progress = minProgress
         sbDelayMax.progress = maxProgress
         updateDelayLabel()
+
+        cbAutoLure.isChecked = config.autoLureEnabled
+        sbLureDuration.progress = (config.lureDurationMinutes - 1).coerceIn(0, 29)
+        tvLureDurationLabel.text = "Lure Duration: ${config.lureDurationMinutes} min"
     }
 
     private fun setupListeners() {
@@ -139,6 +149,22 @@ class MainActivity : AppCompatActivity() {
                 val value = (0.5f + (progress * 0.5f)).coerceAtLeast(config.minRecastDelaySec)
                 config.maxRecastDelaySec = value
                 updateDelayLabel()
+                config.save(this@MainActivity)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        cbAutoLure.setOnCheckedChangeListener { _, isChecked ->
+            config.autoLureEnabled = isChecked
+            config.save(this@MainActivity)
+        }
+
+        sbLureDuration.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val minutes = progress + 1
+                config.lureDurationMinutes = minutes
+                tvLureDurationLabel.text = "Lure Duration: $minutes min"
                 config.save(this@MainActivity)
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}

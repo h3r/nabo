@@ -241,6 +241,32 @@
                     android:max="10"
                     android:progress="7" />
 
+                <!-- Auto-Lure Option -->
+                <CheckBox
+                    android:id="@+id/cbMainAutoLure"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Enable Auto-Apply Lure / Buff (3: LURE)"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvMainLureDurationLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Lure Duration: 10 min"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
+
+                <SeekBar
+                    android:id="@+id/sbMainLureDuration"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="29"
+                    android:progress="9" />
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
