@@ -1,0 +1,32 @@
+name: Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: NaBo ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: nabo.apk
+          body: |
+            ### NaBo v1.0.0
+            - Audio-triggered touch automation for mobile
+            - Configurable trigger threshold and randomized delays
+            - Standalone background overlay with draggable target markers
