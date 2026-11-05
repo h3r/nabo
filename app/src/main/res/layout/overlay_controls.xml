@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/layoutControlRoot"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_floating_pill"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="12dp"
+    android:paddingTop="6dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="6dp">
+
+    <!-- Drag Handle / Status icon -->
+    <ImageView
+        android:id="@+id/ivDragHandle"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginEnd="8dp"
+        android:src="@drawable/ic_launcher_foreground"
+        app:tint="@color/primary" />
+
+    <!-- Status & Audio Level info -->
+    <LinearLayout
+        android:id="@+id/layoutInfoPanel"
+        android:layout_width="130dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvBotStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/overlay_status_idle"
+            android:textColor="@color/text_primary"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <!-- Audio level meter -->
+        <ProgressBar
+            android:id="@+id/pbAudioLevel"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:layout_marginTop="3dp"
+            android:max="100"
+            android:progress="0"
+            android:progressTint="@color/overlay_meter_progress" />
+    </LinearLayout>
+
+    <!-- Play / Pause Action Button -->
+    <ImageButton
+        android:id="@+id/btnToggleRunning"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="8dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Start or stop fishing"
+        android:src="@drawable/ic_play"
+        app:tint="@color/accent_green" />
+
+    <!-- Settings Button -->
+    <ImageButton
+        android:id="@+id/btnOverlaySettings"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="4dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Settings"
+        android:src="@drawable/ic_settings"
+        app:tint="@color/text_secondary" />
+
+    <!-- Close Button -->
+    <ImageButton
+        android:id="@+id/btnCloseOverlay"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginStart="4dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Close"
+        android:src="@drawable/ic_stop"
+        app:tint="@color/accent_red" />
+
+</LinearLayout>

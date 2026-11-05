@@ -1,0 +1,41 @@
+<resources>
+    <string name="app_name">NaBo</string>
+    <string name="accessibility_service_name">NaBo Service</string>
+    <string name="accessibility_service_description">Simulates screen taps on user-configured target coordinates upon audio trigger detection.</string>
+
+    <!-- Main Activity -->
+    <string name="title_permissions">Setup Permissions</string>
+    <string name="desc_permissions">Grant the required permissions for NaBo to monitor audio triggers and simulate touch actions.</string>
+    <string name="perm_overlay_title">Overlay Window (Draw Over Other Apps)</string>
+    <string name="perm_overlay_desc">Needed to display floating targets and control buttons over target apps.</string>
+    <string name="perm_accessibility_title">Accessibility Service (Simulate Taps)</string>
+    <string name="perm_accessibility_desc">Needed to dispatch touch gestures to target coordinates.</string>
+    <string name="perm_mic_title">Microphone Access (Sound Detection)</string>
+    <string name="perm_mic_desc">Needed to detect audio amplitude spikes and sound triggers.</string>
+    <string name="perm_notification_title">Notifications</string>
+    <string name="perm_notification_desc">Needed to keep the background service active.</string>
+
+    <string name="btn_grant">Grant</string>
+    <string name="status_granted">Active</string>
+    <string name="status_missing">Required</string>
+
+    <string name="title_configuration">Default Settings</string>
+    <string name="label_sound_threshold">Sound Threshold (Sensitivity)</string>
+    <string name="label_delay_range">Repeat Delay Range (Seconds)</string>
+    <string name="label_cast_timeout">Action Timeout (Seconds)</string>
+    <string name="btn_launch_overlay">Launch Floating Overlay</string>
+    <string name="btn_stop_overlay">Stop Overlay Service</string>
+
+    <!-- Overlay & Dialog -->
+    <string name="overlay_cast_label">1: BIND A</string>
+    <string name="overlay_reel_label">2: BIND B</string>
+    <string name="overlay_status_idle">Idle</string>
+    <string name="overlay_status_listening">Listening for trigger…</string>
+    <string name="overlay_status_reeling">Trigger detected! Tapping Bind B…</string>
+    <string name="overlay_status_casting">Executing Bind A…</string>
+
+    <string name="channel_name">NaBo Service</string>
+    <string name="channel_description">Active background service for audio trigger detection and touch automation.</string>
+    <string name="notification_title">NaBo Running</string>
+    <string name="notification_content">Monitoring audio trigger in background.</string>
+</resources>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="280dp"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_floating_pill"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Bot Configuration"
+        android:textColor="@color/text_primary"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <!-- Audio Threshold -->
+    <TextView
+        android:id="@+id/tvThresholdLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Sound Threshold: 40"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp" />
+
+    <SeekBar
+        android:id="@+id/sbThreshold"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progress="40" />
+
+    <!-- Recast Min Delay -->
+    <TextView
+        android:id="@+id/tvMinDelayLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Min Delay: 2.0s"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp" />
+
+    <SeekBar
+        android:id="@+id/sbMinDelay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="10"
+        android:progress="4" />
+
+    <!-- Recast Max Delay -->
+    <TextView
+        android:id="@+id/tvMaxDelayLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Max Delay: 3.5s"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp" />
+
+    <SeekBar
+        android:id="@+id/sbMaxDelay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="10"
+        android:progress="7" />
+
+    <!-- Close button -->
+    <Button
+        android:id="@+id/btnCloseSettings"
+        android:layout_width="match_parent"
+        android:layout_height="38dp"
+        android:layout_marginTop="14dp"
+        android:backgroundTint="@color/primary"
+        android:text="Save &amp; Close"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        android:textSize="12sp" />
+
+</LinearLayout>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="64dp"
+    android:layout_height="64dp"
+    android:background="@drawable/bg_target_circle"
+    android:clickable="true"
+    android:focusable="true">
+
+    <!-- Center Crosshair Lines -->
+    <View
+        android:layout_width="1.5dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:background="#88FFFFFF" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1.5dp"
+        android:layout_gravity="center"
+        android:background="#88FFFFFF" />
+
+    <!-- Center dot -->
+    <View
+        android:id="@+id/viewCenterDot"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:layout_gravity="center"
+        android:background="@drawable/bg_target_circle" />
+
+    <!-- Target Label (e.g. CAST or REEL) -->
+    <TextView
+        android:id="@+id/tvTargetName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|top"
+        android:layout_marginTop="6dp"
+        android:text="1: CAST"
+        android:textColor="@android:color/white"
+        android:textSize="10sp"
+        android:textStyle="bold" />
+
+</FrameLayout>
