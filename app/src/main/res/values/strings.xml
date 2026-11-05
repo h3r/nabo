@@ -30,11 +30,16 @@
     <string name="overlay_cast_label">1: BIND A</string>
     <string name="overlay_reel_label">2: BIND B</string>
     <string name="overlay_lure_label">3: LURE</string>
+    <string name="overlay_logout_label">4: LOGOUT</string>
+    <string name="overlay_enter_world_label">5: ENTER</string>
     <string name="overlay_status_idle">Idle</string>
     <string name="overlay_status_listening">Listening for trigger…</string>
     <string name="overlay_status_reeling">Trigger detected! Tapping Bind B…</string>
     <string name="overlay_status_casting">Executing Bind A…</string>
     <string name="overlay_status_luring">Applying lure (3: LURE)…</string>
+    <string name="overlay_status_break">Break: %1$02d:%2$02d remaining…</string>
+    <string name="overlay_status_logging_out">Session break: Logging out…</string>
+    <string name="overlay_status_logging_in">Break ended: Entering world…</string>
 
     <string name="label_auto_lure">Auto-Apply Lure / Buff</string>
     <string name="label_lure_duration">Lure Duration</string>

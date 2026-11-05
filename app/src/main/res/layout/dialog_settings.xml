@@ -91,6 +91,57 @@
         android:max="29"
         android:progress="9" />
 
+    <!-- Session Break Options -->
+    <CheckBox
+        android:id="@+id/cbEnableBreaks"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Enable Humanized Breaks"
+        android:textColor="@color/text_primary"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/tvSessionDurationLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Session: 40 min"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp" />
+
+    <SeekBar
+        android:id="@+id/sbSessionDuration"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="22"
+        android:progress="6" />
+
+    <TextView
+        android:id="@+id/tvBreakDurationLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Break: 5 min"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp" />
+
+    <SeekBar
+        android:id="@+id/sbBreakDuration"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="29"
+        android:progress="4" />
+
+    <CheckBox
+        android:id="@+id/cbLogoutOnBreak"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Tap Logout &amp; Reconnect (4 &amp; 5)"
+        android:textColor="@color/text_primary"
+        android:textSize="11sp" />
+
     <!-- Close button -->
     <Button
         android:id="@+id/btnCloseSettings"

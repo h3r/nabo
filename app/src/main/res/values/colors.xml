@@ -19,6 +19,8 @@
     <color name="overlay_cast">#2196F3</color>
     <color name="overlay_reel">#FF5722</color>
     <color name="overlay_lure">#AB47BC</color>
+    <color name="overlay_logout">#EF5350</color>
+    <color name="overlay_enter_world">#26A69A</color>
     <color name="overlay_pill_bg">#D91C1C1E</color>
     <color name="overlay_meter_bg">#424242</color>
     <color name="overlay_meter_progress">#00E676</color>

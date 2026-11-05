@@ -42,18 +42,40 @@ class FishingOverlayService : Service() {
     private var castMarkerView: View? = null
     private var reelMarkerView: View? = null
     private var lureMarkerView: View? = null
+    private var logoutMarkerView: View? = null
+    private var enterWorldMarkerView: View? = null
     private var settingsDialogView: View? = null
 
     private lateinit var audioDetector: AudioSplashDetector
 
     private var isBotActive = false
     private var isReelingOrDelaying = false
+    private var isOnBreak = false
     private var lureExpirationTimestamp = 0L
+    private var sessionEndTimestamp = 0L
+    private var breakEndTimestamp = 0L
 
     private val timeoutRunnable = Runnable {
-        if (isBotActive && !isReelingOrDelaying) {
+        if (isBotActive && !isReelingOrDelaying && !isOnBreak) {
             updateStatusText("Timeout reached, recasting…")
             startOrContinueFishingCycle()
+        }
+    }
+
+    private val breakCountdownRunnable = object : Runnable {
+        override fun run() {
+            if (!isBotActive || !isOnBreak) return
+
+            val remainingMs = (breakEndTimestamp - SystemClock.uptimeMillis()).coerceAtLeast(0L)
+            if (remainingMs <= 0L) {
+                endBreakAndResume()
+            } else {
+                val totalSec = remainingMs / 1000L
+                val min = totalSec / 60
+                val sec = totalSec % 60
+                updateStatusText(String.format("Break: %02d:%02d remaining…", min, sec))
+                mainHandler.postDelayed(this, 1000L)
+            }
         }
     }
 
@@ -182,6 +204,10 @@ class FishingOverlayService : Service() {
         if (config.reelY <= 0f) config.reelY = 300f + halfMarker
         if (config.lureX <= 0f) config.lureX = 600f + halfMarker
         if (config.lureY <= 0f) config.lureY = 300f + halfMarker
+        if (config.logoutX <= 0f) config.logoutX = 200f + halfMarker
+        if (config.logoutY <= 0f) config.logoutY = 500f + halfMarker
+        if (config.enterWorldX <= 0f) config.enterWorldX = 400f + halfMarker
+        if (config.enterWorldY <= 0f) config.enterWorldY = 500f + halfMarker
 
         // Marker 1: Cast Button Target
         val castView = inflater.inflate(R.layout.overlay_target_marker, null)
@@ -258,6 +284,58 @@ class FishingOverlayService : Service() {
             config.save(this)
         }
         windowManager.addView(lureView, lureParams)
+
+        // Marker 4: Logout Button Target
+        val logoutView = inflater.inflate(R.layout.overlay_target_marker, null)
+        logoutMarkerView = logoutView
+        logoutView.findViewById<TextView>(R.id.tvTargetName).text = getString(R.string.overlay_logout_label)
+        logoutView.findViewById<View>(R.id.viewCenterDot).setBackgroundColor(getColor(R.color.overlay_logout))
+        logoutView.visibility = if (config.breakEnabled && config.logoutOnBreakEnabled) View.VISIBLE else View.GONE
+
+        val logoutParams = WindowManager.LayoutParams(
+            markerSize,
+            markerSize,
+            getOverlayWindowType(),
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = (config.logoutX - halfMarker).toInt()
+            y = (config.logoutY - halfMarker).toInt()
+        }
+
+        setupMarkerDragListener(logoutView, logoutParams) { centerX, centerY ->
+            config.logoutX = centerX
+            config.logoutY = centerY
+            config.save(this)
+        }
+        windowManager.addView(logoutView, logoutParams)
+
+        // Marker 5: Enter World Button Target
+        val enterWorldView = inflater.inflate(R.layout.overlay_target_marker, null)
+        enterWorldMarkerView = enterWorldView
+        enterWorldView.findViewById<TextView>(R.id.tvTargetName).text = getString(R.string.overlay_enter_world_label)
+        enterWorldView.findViewById<View>(R.id.viewCenterDot).setBackgroundColor(getColor(R.color.overlay_enter_world))
+        enterWorldView.visibility = if (config.breakEnabled && config.logoutOnBreakEnabled) View.VISIBLE else View.GONE
+
+        val enterWorldParams = WindowManager.LayoutParams(
+            markerSize,
+            markerSize,
+            getOverlayWindowType(),
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = (config.enterWorldX - halfMarker).toInt()
+            y = (config.enterWorldY - halfMarker).toInt()
+        }
+
+        setupMarkerDragListener(enterWorldView, enterWorldParams) { centerX, centerY ->
+            config.enterWorldX = centerX
+            config.enterWorldY = centerY
+            config.save(this)
+        }
+        windowManager.addView(enterWorldView, enterWorldParams)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -341,6 +419,8 @@ class FishingOverlayService : Service() {
             btnToggle?.setImageResource(R.drawable.ic_stop)
             btnToggle?.setColorFilter(getColor(R.color.accent_red))
             isReelingOrDelaying = false
+            isOnBreak = false
+            sessionEndTimestamp = SystemClock.uptimeMillis() + (config.sessionDurationMinutes * 60 * 1000L)
             updateStatusText("Starting automation…")
             startOrContinueFishingCycle()
         } else {
@@ -349,12 +429,20 @@ class FishingOverlayService : Service() {
             audioDetector.disarmTrigger()
             mainHandler.removeCallbacksAndMessages(null)
             isReelingOrDelaying = false
+            isOnBreak = false
             updateStatusText(getString(R.string.overlay_status_idle))
         }
     }
 
     private fun startOrContinueFishingCycle() {
         if (!isBotActive) return
+        if (isOnBreak) return
+
+        // Check if session has reached scheduled break time
+        if (config.breakEnabled && SystemClock.uptimeMillis() >= sessionEndTimestamp) {
+            startBreak()
+            return
+        }
 
         if (config.autoLureEnabled && isLureExpired()) {
             applyLureThen {
@@ -369,8 +457,49 @@ class FishingOverlayService : Service() {
         return SystemClock.uptimeMillis() >= lureExpirationTimestamp
     }
 
+    private fun startBreak() {
+        isOnBreak = true
+        mainHandler.removeCallbacks(timeoutRunnable)
+        audioDetector.disarmTrigger()
+
+        val breakDurationMs = (config.breakDurationMinutes * 60 * 1000L).coerceAtLeast(60000L)
+        breakEndTimestamp = SystemClock.uptimeMillis() + breakDurationMs
+
+        if (config.logoutOnBreakEnabled && config.logoutX > 0f) {
+            updateStatusText(getString(R.string.overlay_status_logging_out))
+            val accessibility = FishingAccessibilityService.instance
+            accessibility?.click(config.logoutX, config.logoutY) {
+                mainHandler.post(breakCountdownRunnable)
+            }
+        } else {
+            mainHandler.post(breakCountdownRunnable)
+        }
+    }
+
+    private fun endBreakAndResume() {
+        isOnBreak = false
+        sessionEndTimestamp = SystemClock.uptimeMillis() + (config.sessionDurationMinutes * 60 * 1000L)
+
+        if (config.logoutOnBreakEnabled && config.enterWorldX > 0f) {
+            updateStatusText(getString(R.string.overlay_status_logging_in))
+            val accessibility = FishingAccessibilityService.instance
+            accessibility?.click(config.enterWorldX, config.enterWorldY) {
+                // Give 8 seconds for game loading screen before recasting
+                updateStatusText("Entering world, waiting 8s…")
+                mainHandler.postDelayed({
+                    if (isBotActive && !isOnBreak) {
+                        startOrContinueFishingCycle()
+                    }
+                }, 8000L)
+            }
+        } else {
+            updateStatusText("Break ended! Resuming…")
+            startOrContinueFishingCycle()
+        }
+    }
+
     private fun applyLureThen(onComplete: () -> Unit) {
-        if (!isBotActive) return
+        if (!isBotActive || isOnBreak) return
 
         updateStatusText(getString(R.string.overlay_status_luring))
         mainHandler.removeCallbacks(timeoutRunnable)
@@ -382,14 +511,14 @@ class FishingOverlayService : Service() {
         }
 
         accessibility.click(config.lureX, config.lureY) {
-            if (!isBotActive) return@click
+            if (!isBotActive || isOnBreak) return@click
 
             lureExpirationTimestamp = SystemClock.uptimeMillis() + (config.lureDurationMinutes * 60 * 1000L)
             val delayMs = (config.lureApplyDelaySec * 1000f).toLong().coerceAtLeast(2500L)
             updateStatusText(String.format("Lure applied! Cast in %.1fs", config.lureApplyDelaySec))
 
             mainHandler.postDelayed({
-                if (isBotActive) {
+                if (isBotActive && !isOnBreak) {
                     onComplete()
                 }
             }, delayMs)
@@ -397,7 +526,7 @@ class FishingOverlayService : Service() {
     }
 
     private fun castFishingLine() {
-        if (!isBotActive) return
+        if (!isBotActive || isOnBreak) return
 
         updateStatusText(getString(R.string.overlay_status_casting))
         mainHandler.removeCallbacks(timeoutRunnable)
@@ -409,7 +538,7 @@ class FishingOverlayService : Service() {
         }
 
         accessibility.click(config.castX, config.castY) {
-            if (!isBotActive) return@click
+            if (!isBotActive || isOnBreak) return@click
 
             // Arm sound detector after a 2.5s ignore window (to filter casting/splash landing noise)
             audioDetector.armTrigger(gracePeriodMs = 2500L)
@@ -422,7 +551,7 @@ class FishingOverlayService : Service() {
     }
 
     private fun onCatchTriggered() {
-        if (!isBotActive || isReelingOrDelaying) return
+        if (!isBotActive || isReelingOrDelaying || isOnBreak) return
 
         isReelingOrDelaying = true
         mainHandler.removeCallbacks(timeoutRunnable)
@@ -436,7 +565,7 @@ class FishingOverlayService : Service() {
 
         // Tap the Reel button binding
         accessibility.click(config.reelX, config.reelY) {
-            if (!isBotActive) return@click
+            if (!isBotActive || isOnBreak) return@click
 
             val delayMillis = config.getRandomRecastDelayMillis()
             val delaySeconds = delayMillis / 1000.0f
@@ -444,7 +573,7 @@ class FishingOverlayService : Service() {
 
             // Wait randomized delay before next cycle
             mainHandler.postDelayed({
-                if (isBotActive) {
+                if (isBotActive && !isOnBreak) {
                     isReelingOrDelaying = false
                     startOrContinueFishingCycle()
                 }
@@ -458,6 +587,7 @@ class FishingOverlayService : Service() {
 
     private fun stopBotOnError(errorMessage: String) {
         isBotActive = false
+        isOnBreak = false
         audioDetector.disarmTrigger()
         mainHandler.removeCallbacksAndMessages(null)
         controlView?.findViewById<ImageButton>(R.id.btnToggleRunning)?.setImageResource(R.drawable.ic_play)
@@ -497,6 +627,14 @@ class FishingOverlayService : Service() {
         val cbAutoLure = dialogView.findViewById<CheckBox>(R.id.cbAutoLure)
         val tvLureDuration = dialogView.findViewById<TextView>(R.id.tvLureDurationLabel)
         val sbLureDuration = dialogView.findViewById<SeekBar>(R.id.sbLureDuration)
+
+        val cbEnableBreaks = dialogView.findViewById<CheckBox>(R.id.cbEnableBreaks)
+        val tvSessionDuration = dialogView.findViewById<TextView>(R.id.tvSessionDurationLabel)
+        val sbSessionDuration = dialogView.findViewById<SeekBar>(R.id.sbSessionDuration)
+        val tvBreakDuration = dialogView.findViewById<TextView>(R.id.tvBreakDurationLabel)
+        val sbBreakDuration = dialogView.findViewById<SeekBar>(R.id.sbBreakDuration)
+        val cbLogoutOnBreak = dialogView.findViewById<CheckBox>(R.id.cbLogoutOnBreak)
+
         val btnClose = dialogView.findViewById<Button>(R.id.btnCloseSettings)
 
         // Threshold setup
@@ -569,6 +707,52 @@ class FishingOverlayService : Service() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
+        // Session Breaks setup
+        cbEnableBreaks.isChecked = config.breakEnabled
+        tvSessionDuration.text = "Session: ${config.sessionDurationMinutes} min"
+        val sessionProgress = ((config.sessionDurationMinutes - 10) / 5).coerceIn(0, 22)
+        sbSessionDuration.progress = sessionProgress
+
+        tvBreakDuration.text = "Break: ${config.breakDurationMinutes} min"
+        sbBreakDuration.progress = (config.breakDurationMinutes - 1).coerceIn(0, 29)
+        cbLogoutOnBreak.isChecked = config.logoutOnBreakEnabled
+
+        fun updateLogoutMarkersVisibility() {
+            val shouldShow = config.breakEnabled && config.logoutOnBreakEnabled
+            logoutMarkerView?.visibility = if (shouldShow) View.VISIBLE else View.GONE
+            enterWorldMarkerView?.visibility = if (shouldShow) View.VISIBLE else View.GONE
+        }
+
+        cbEnableBreaks.setOnCheckedChangeListener { _, isChecked ->
+            config.breakEnabled = isChecked
+            updateLogoutMarkersVisibility()
+        }
+
+        sbSessionDuration.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val minutes = 10 + (progress * 5)
+                config.sessionDurationMinutes = minutes
+                tvSessionDuration.text = "Session: $minutes min"
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        sbBreakDuration.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val minutes = progress + 1
+                config.breakDurationMinutes = minutes
+                tvBreakDuration.text = "Break: $minutes min"
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        cbLogoutOnBreak.setOnCheckedChangeListener { _, isChecked ->
+            config.logoutOnBreakEnabled = isChecked
+            updateLogoutMarkersVisibility()
+        }
+
         btnClose.setOnClickListener {
             config.save(this)
             windowManager.removeView(dialogView)
@@ -585,6 +769,7 @@ class FishingOverlayService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         isBotActive = false
+        isOnBreak = false
         mainHandler.removeCallbacksAndMessages(null)
         audioDetector.stop()
 
@@ -592,6 +777,8 @@ class FishingOverlayService : Service() {
         castMarkerView?.let { windowManager.removeView(it) }
         reelMarkerView?.let { windowManager.removeView(it) }
         lureMarkerView?.let { windowManager.removeView(it) }
+        logoutMarkerView?.let { windowManager.removeView(it) }
+        enterWorldMarkerView?.let { windowManager.removeView(it) }
         settingsDialogView?.let { windowManager.removeView(it) }
 
         config.save(this)

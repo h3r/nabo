@@ -267,6 +267,57 @@
                     android:max="29"
                     android:progress="9" />
 
+                <!-- Session Break Options -->
+                <CheckBox
+                    android:id="@+id/cbMainEnableBreaks"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Enable Humanized Session Breaks"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvMainSessionDurationLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Session Duration: 40 min"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
+
+                <SeekBar
+                    android:id="@+id/sbMainSessionDuration"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="22"
+                    android:progress="6" />
+
+                <TextView
+                    android:id="@+id/tvMainBreakDurationLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Break Duration: 5 min"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
+
+                <SeekBar
+                    android:id="@+id/sbMainBreakDuration"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="29"
+                    android:progress="4" />
+
+                <CheckBox
+                    android:id="@+id/cbMainLogoutOnBreak"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Tap Logout &amp; Reconnect (4 &amp; 5)"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

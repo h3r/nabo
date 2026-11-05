@@ -17,7 +17,15 @@ data class BotConfig(
     var lureDurationMinutes: Int = 10,
     var lureX: Float = 0f,
     var lureY: Float = 0f,
-    var lureApplyDelaySec: Float = 3.0f
+    var lureApplyDelaySec: Float = 3.0f,
+    var breakEnabled: Boolean = false,
+    var sessionDurationMinutes: Int = 40,
+    var breakDurationMinutes: Int = 5,
+    var logoutOnBreakEnabled: Boolean = false,
+    var logoutX: Float = 0f,
+    var logoutY: Float = 0f,
+    var enterWorldX: Float = 0f,
+    var enterWorldY: Float = 0f
 ) {
     fun getRandomRecastDelayMillis(): Long {
         val minMs = (minRecastDelaySec * 1000).toLong().coerceAtLeast(500L)
@@ -41,6 +49,14 @@ data class BotConfig(
             .putFloat(KEY_LURE_X, lureX)
             .putFloat(KEY_LURE_Y, lureY)
             .putFloat(KEY_LURE_DELAY, lureApplyDelaySec)
+            .putBoolean(KEY_BREAK_ENABLED, breakEnabled)
+            .putInt(KEY_SESSION_DURATION, sessionDurationMinutes)
+            .putInt(KEY_BREAK_DURATION, breakDurationMinutes)
+            .putBoolean(KEY_LOGOUT_ON_BREAK, logoutOnBreakEnabled)
+            .putFloat(KEY_LOGOUT_X, logoutX)
+            .putFloat(KEY_LOGOUT_Y, logoutY)
+            .putFloat(KEY_ENTER_WORLD_X, enterWorldX)
+            .putFloat(KEY_ENTER_WORLD_Y, enterWorldY)
             .apply()
     }
 
@@ -59,6 +75,14 @@ data class BotConfig(
         private const val KEY_LURE_X = "lure_x"
         private const val KEY_LURE_Y = "lure_y"
         private const val KEY_LURE_DELAY = "lure_apply_delay"
+        private const val KEY_BREAK_ENABLED = "break_enabled"
+        private const val KEY_SESSION_DURATION = "session_duration_minutes"
+        private const val KEY_BREAK_DURATION = "break_duration_minutes"
+        private const val KEY_LOGOUT_ON_BREAK = "logout_on_break_enabled"
+        private const val KEY_LOGOUT_X = "logout_x"
+        private const val KEY_LOGOUT_Y = "logout_y"
+        private const val KEY_ENTER_WORLD_X = "enter_world_x"
+        private const val KEY_ENTER_WORLD_Y = "enter_world_y"
 
         fun load(context: Context): BotConfig {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -75,7 +99,15 @@ data class BotConfig(
                 lureDurationMinutes = prefs.getInt(KEY_LURE_DURATION, 10),
                 lureX = prefs.getFloat(KEY_LURE_X, 0f),
                 lureY = prefs.getFloat(KEY_LURE_Y, 0f),
-                lureApplyDelaySec = prefs.getFloat(KEY_LURE_DELAY, 3.0f)
+                lureApplyDelaySec = prefs.getFloat(KEY_LURE_DELAY, 3.0f),
+                breakEnabled = prefs.getBoolean(KEY_BREAK_ENABLED, false),
+                sessionDurationMinutes = prefs.getInt(KEY_SESSION_DURATION, 40),
+                breakDurationMinutes = prefs.getInt(KEY_BREAK_DURATION, 5),
+                logoutOnBreakEnabled = prefs.getBoolean(KEY_LOGOUT_ON_BREAK, false),
+                logoutX = prefs.getFloat(KEY_LOGOUT_X, 0f),
+                logoutY = prefs.getFloat(KEY_LOGOUT_Y, 0f),
+                enterWorldX = prefs.getFloat(KEY_ENTER_WORLD_X, 0f),
+                enterWorldY = prefs.getFloat(KEY_ENTER_WORLD_Y, 0f)
             )
         }
     }

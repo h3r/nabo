@@ -38,6 +38,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvLureDurationLabel: TextView
     private lateinit var sbLureDuration: SeekBar
 
+    private lateinit var cbEnableBreaks: android.widget.CheckBox
+    private lateinit var tvSessionDurationLabel: TextView
+    private lateinit var sbSessionDuration: SeekBar
+    private lateinit var tvBreakDurationLabel: TextView
+    private lateinit var sbBreakDuration: SeekBar
+    private lateinit var cbLogoutOnBreak: android.widget.CheckBox
+
     private val micPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -85,6 +92,13 @@ class MainActivity : AppCompatActivity() {
         tvLureDurationLabel = findViewById(R.id.tvMainLureDurationLabel)
         sbLureDuration = findViewById(R.id.sbMainLureDuration)
 
+        cbEnableBreaks = findViewById(R.id.cbMainEnableBreaks)
+        tvSessionDurationLabel = findViewById(R.id.tvMainSessionDurationLabel)
+        sbSessionDuration = findViewById(R.id.sbMainSessionDuration)
+        tvBreakDurationLabel = findViewById(R.id.tvMainBreakDurationLabel)
+        sbBreakDuration = findViewById(R.id.sbMainBreakDuration)
+        cbLogoutOnBreak = findViewById(R.id.cbMainLogoutOnBreak)
+
         // Initialize sliders from saved config
         sbThreshold.progress = config.soundThreshold
         tvThresholdLabel.text = "Sound Threshold: ${config.soundThreshold}"
@@ -98,6 +112,15 @@ class MainActivity : AppCompatActivity() {
         cbAutoLure.isChecked = config.autoLureEnabled
         sbLureDuration.progress = (config.lureDurationMinutes - 1).coerceIn(0, 29)
         tvLureDurationLabel.text = "Lure Duration: ${config.lureDurationMinutes} min"
+
+        cbEnableBreaks.isChecked = config.breakEnabled
+        val sessionProgress = ((config.sessionDurationMinutes - 10) / 5).coerceIn(0, 22)
+        sbSessionDuration.progress = sessionProgress
+        tvSessionDurationLabel.text = "Session Duration: ${config.sessionDurationMinutes} min"
+
+        sbBreakDuration.progress = (config.breakDurationMinutes - 1).coerceIn(0, 29)
+        tvBreakDurationLabel.text = "Break Duration: ${config.breakDurationMinutes} min"
+        cbLogoutOnBreak.isChecked = config.logoutOnBreakEnabled
     }
 
     private fun setupListeners() {
@@ -170,6 +193,38 @@ class MainActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
+
+        cbEnableBreaks.setOnCheckedChangeListener { _, isChecked ->
+            config.breakEnabled = isChecked
+            config.save(this@MainActivity)
+        }
+
+        sbSessionDuration.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val minutes = 10 + (progress * 5)
+                config.sessionDurationMinutes = minutes
+                tvSessionDurationLabel.text = "Session Duration: $minutes min"
+                config.save(this@MainActivity)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        sbBreakDuration.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val minutes = progress + 1
+                config.breakDurationMinutes = minutes
+                tvBreakDurationLabel.text = "Break Duration: $minutes min"
+                config.save(this@MainActivity)
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        cbLogoutOnBreak.setOnCheckedChangeListener { _, isChecked ->
+            config.logoutOnBreakEnabled = isChecked
+            config.save(this@MainActivity)
+        }
 
         btnLaunchOverlay.setOnClickListener {
             if (!hasAllPermissions()) {
